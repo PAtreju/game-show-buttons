@@ -19,6 +19,8 @@ void LEDIndicator::begin()
     turnOff();
     pixels.begin();
     pixels.clear();
+
+    blink(1, 200, 200); // Initial blink to indicate startup
 }
 
 void LEDIndicator::turnOn()
