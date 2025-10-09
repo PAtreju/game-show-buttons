@@ -1,0 +1,220 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TeamForm } from "./TeamForm";
+import { useTeams } from "@/hooks/useTeams";
+import { useWebSocket } from "@/hooks/useWebSocketHook";
+import { Trash2, RefreshCw, Wifi, WifiOff, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/api";
+
+export function TeamsList() {
+  const [devices, setDevices] = useState<string[]>([]);
+  const { teams, loading, error, createTeam, updateTeam, deleteTeam, refetch } =
+    useTeams();
+  const { lastMessage } = useWebSocket();
+  const [pressedDevice, setPressedDevice] = useState<string | null>(null);
+
+  const fetchDevices = async () => {
+    const deviceList = await apiClient.getDevices();
+    setDevices(deviceList);
+  };
+
+  // Handle WebSocket messages
+  useEffect(() => {
+    if (lastMessage) {
+      switch (lastMessage.type) {
+        case "deviceConnected":
+          if (lastMessage.ip && !devices.includes(lastMessage.ip)) {
+            setDevices((prev) => [...prev, lastMessage.ip!]);
+          }
+          break;
+        case "deviceDisconnected":
+          if (lastMessage.ip) {
+            setDevices((prev) => prev.filter((ip) => ip !== lastMessage.ip));
+          }
+          break;
+        case "buttonPressed":
+          setPressedDevice(lastMessage.ip || null);
+          break;
+        case "reset":
+          setPressedDevice(null);
+          break;
+      }
+    }
+  }, [lastMessage, devices]);
+
+  useEffect(() => {
+    fetchDevices();
+    // Refresh devices every 30 seconds (less frequent since we have WebSocket updates)
+    const interval = setInterval(fetchDevices, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCreateTeam = async (name: string, deviceIp?: string) => {
+    await createTeam(name, deviceIp);
+  };
+
+  const handleUpdateTeam = async (
+    id: string,
+    name: string,
+    deviceIp?: string
+  ) => {
+    await updateTeam(id, name, deviceIp);
+  };
+
+  const handleDeleteTeam = async (id: string) => {
+    if (confirm("Are you sure you want to delete this team?")) {
+      await deleteTeam(id);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading teams...</span>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Game Show Teams</CardTitle>
+            <CardDescription>
+              Manage teams and their button devices
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={refetch} size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <TeamForm onSubmit={handleCreateTeam} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {teams.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No teams created yet.</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Team Name</TableHead>
+                <TableHead>Device Status</TableHead>
+                <TableHead>Device IP</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {teams.map((team) => {
+                const isPressed = (team.deviceIp || 1) === pressedDevice;
+                return (
+                  <TableRow
+                    key={team.id}
+                    className={
+                      isPressed ? "bg-yellow-50 border-yellow-200" : ""
+                    }
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {team.name}
+                        {isPressed && (
+                          <Badge
+                            variant="destructive"
+                            className="animate-pulse"
+                          >
+                            <Zap className="h-3 w-3 mr-1" />
+                            PRESSED!
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {team.deviceIp && devices.includes(team.deviceIp) ? (
+                        <Badge
+                          variant={isPressed ? "destructive" : "default"}
+                          className="flex items-center w-fit"
+                        >
+                          <Wifi className="h-3 w-3 mr-1" />
+                          {isPressed ? "Active" : "Connected"}
+                        </Badge>
+                      ) : team.deviceIp ? (
+                        <Badge
+                          variant="destructive"
+                          className="flex items-center w-fit"
+                        >
+                          <WifiOff className="h-3 w-3 mr-1" />
+                          Disconnected
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center w-fit"
+                        >
+                          <WifiOff className="h-3 w-3 mr-1" />
+                          No Device
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {team.deviceIp || (
+                        <span className="text-muted-foreground">
+                          Not assigned
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <TeamForm
+                          team={team}
+                          onSubmit={(name, deviceIp) =>
+                            handleUpdateTeam(team.id, name, deviceIp)
+                          }
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteTeam(team.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
