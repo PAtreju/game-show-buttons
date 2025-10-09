@@ -8,6 +8,9 @@
 // Global state variables
 bool systemInitialized = false;
 unsigned long lastRetryTime = 0;
+bool lastButtonState = HIGH;
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50; // 50ms debounce delay
 
 // Function declarations
 void initializeSystem();
@@ -22,6 +25,9 @@ void setup()
 
   Serial.println("Starting ESP32 Game Show Button...");
 
+  // Initialize GPIO0 as input with internal pull-down
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
   // Initialize LED
   ledIndicator.begin();
 
@@ -31,6 +37,27 @@ void setup()
 
 void loop()
 {
+  // Check button state with debouncing
+  bool currentButtonState = digitalRead(BUTTON_PIN);
+
+  if (currentButtonState != lastButtonState)
+  {
+    lastDebounceTime = millis();
+  }
+
+  // if ((millis() - lastDebounceTime) > debounceDelay)
+  // {
+  // Button state has been stable for debounce period
+  if (currentButtonState == LOW && lastButtonState == HIGH)
+  {
+    // Button was just pressed (transition from HIGH to LOW)
+    Serial.println("Button pressed!");
+    handleButtonPress();
+  }
+  // }
+
+  lastButtonState = currentButtonState;
+
   // Handle WebSocket events if connected
   if (wsClient.isWebSocketConnected())
   {
@@ -128,8 +155,6 @@ void handleButtonPress()
   if (wsClient.isWebSocketConnected())
   {
     wsClient.sendButtonPress();
-    // Brief LED flash to indicate button press was sent
-    ledIndicator.blink(1, 50, 50);
   }
   else
   {

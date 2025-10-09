@@ -66,6 +66,10 @@ class ApiClient {
   async getDevices(): Promise<string[]> {
     return this.request<string[]>("/devices");
   }
+
+  async getPressedButton(): Promise<{ pressedButton: string | null }> {
+    return this.request<{ pressedButton: string | null }>("/devices/pressed");
+  }
 }
 
 export const apiClient = new ApiClient();

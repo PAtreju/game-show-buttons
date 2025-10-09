@@ -85,6 +85,7 @@ export function createWebSocketServer(httpServer: Server) {
 
         switch (parsedMessage.type) {
           case "buttonPress":
+            console.log(`Button press from ${ip}`);
             if (!getPressedButton()) {
               setPressedButton(ip!);
               ws.send(JSON.stringify({ type: "ledControl", action: "on" }));
@@ -98,7 +99,7 @@ export function createWebSocketServer(httpServer: Server) {
           case "reset":
             setPressedButton(null);
             wss.clients.forEach((client) => {
-              if (client !== ws && client.readyState === WebSocket.OPEN) {
+              if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({ type: "reset" }));
                 if (client === devices.get(ip!)) {
                   client.send(

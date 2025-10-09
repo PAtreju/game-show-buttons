@@ -7,7 +7,6 @@
 #define WIFI_CONNECTION_TIMEOUT 30 // seconds
 
 // Server Configuration
-#define WEBSOCKET_SERVER "192.168.1.100"
 #define WEBSOCKET_PORT 3000
 #define WEBSOCKET_PATH "/"
 #define UDP_BROADCAST_PORT 8888

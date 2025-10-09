@@ -26,4 +26,8 @@ devicesRouter.get("/", (req, res) => {
   );
 });
 
+devicesRouter.get("/pressed", (req, res) => {
+  res.json({ pressedButton });
+});
+
 export { devicesRouter };

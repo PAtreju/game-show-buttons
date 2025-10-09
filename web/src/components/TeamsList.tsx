@@ -34,18 +34,31 @@ export function TeamsList() {
     setDevices(deviceList);
   };
 
+  const fetchPressedButton = async () => {
+    const { pressedButton } = await apiClient.getPressedButton();
+    setPressedDevice(pressedButton);
+  };
+
+  const addDevice = (ip: string) => {
+    setDevices((prev) => (prev.includes(ip) ? prev : [...prev, ip]));
+  };
+
+  const removeDevice = (ip: string) => {
+    setDevices((prev) => prev.filter((d) => d !== ip));
+  };
+
   // Handle WebSocket messages
   useEffect(() => {
     if (lastMessage) {
       switch (lastMessage.type) {
         case "deviceConnected":
-          if (lastMessage.ip && !devices.includes(lastMessage.ip)) {
-            setDevices((prev) => [...prev, lastMessage.ip!]);
+          if (lastMessage.ip) {
+            addDevice(lastMessage.ip);
           }
           break;
         case "deviceDisconnected":
           if (lastMessage.ip) {
-            setDevices((prev) => prev.filter((ip) => ip !== lastMessage.ip));
+            removeDevice(lastMessage.ip);
           }
           break;
         case "buttonPressed":
@@ -56,10 +69,11 @@ export function TeamsList() {
           break;
       }
     }
-  }, [lastMessage, devices]);
+  }, [lastMessage]);
 
   useEffect(() => {
     fetchDevices();
+    fetchPressedButton();
     // Refresh devices every 30 seconds (less frequent since we have WebSocket updates)
     const interval = setInterval(fetchDevices, 30000);
     return () => clearInterval(interval);

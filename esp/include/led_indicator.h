@@ -24,6 +24,7 @@ public:
     // Status indication patterns
     void blinkWiFiConnected();                // 3 medium blinks
     void blinkAckReceived();                  // 5 fast blinks
+    void blinkSocketConnected();              // 2 fast blinks
     void blinkAuthSuccess();                  // 3 slow blinks
     void setConnectionStatus(bool connected); // Solid on/off
 

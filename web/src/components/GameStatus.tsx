@@ -33,18 +33,26 @@ export function GameStatus() {
     }
   };
 
+  const addDevice = (ip: string) => {
+    setDevices((prev) => (prev.includes(ip) ? prev : [...prev, ip]));
+  };
+
+  const removeDevice = (ip: string) => {
+    setDevices((prev) => prev.filter((d) => d !== ip));
+  };
+
   // Handle WebSocket messages
   useEffect(() => {
     if (lastMessage) {
       switch (lastMessage.type) {
         case "deviceConnected":
-          if (lastMessage.ip && !devices.includes(lastMessage.ip)) {
-            setDevices((prev) => [...prev, lastMessage.ip!]);
+          if (lastMessage.ip) {
+            addDevice(lastMessage.ip);
           }
           break;
         case "deviceDisconnected":
           if (lastMessage.ip) {
-            setDevices((prev) => prev.filter((ip) => ip !== lastMessage.ip));
+            removeDevice(lastMessage.ip);
           }
           break;
         case "buttonPressed":
@@ -55,7 +63,7 @@ export function GameStatus() {
           break;
       }
     }
-  }, [lastMessage, devices]);
+  }, [lastMessage]);
 
   const handleReset = () => {
     sendMessage({ type: "reset" });

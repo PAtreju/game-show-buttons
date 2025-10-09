@@ -116,6 +116,12 @@ void WebSocketClient::handleMessage(const char *message)
                 ledIndicator.turnOff();
             }
         }
+
+        if (messageType == "reset")
+        {
+            Serial.println("Reset command received from server");
+            ledIndicator.turnOff();
+        }
     }
 }
 
@@ -144,7 +150,7 @@ void WebSocketClient::webSocketEvent(WStype_t type, uint8_t *payload, size_t len
     case WStype_DISCONNECTED:
         Serial.println("WebSocket Disconnected");
         isConnected = false;
-        ledIndicator.setConnectionStatus(false);
+        // ledIndicator.setConnectionStatus(false);
         break;
 
     case WStype_CONNECTED:
@@ -153,7 +159,8 @@ void WebSocketClient::webSocketEvent(WStype_t type, uint8_t *payload, size_t len
         isConnected = true;
 
         // Turn on LED to indicate successful connection
-        ledIndicator.setConnectionStatus(true);
+        // ledIndicator.setConnectionStatus(true);
+        ledIndicator.blinkSocketConnected();
         break;
 
     case WStype_TEXT:
@@ -171,7 +178,7 @@ void WebSocketClient::webSocketEvent(WStype_t type, uint8_t *payload, size_t len
     case WStype_ERROR:
         Serial.println("WebSocket Error");
         isConnected = false;
-        ledIndicator.setConnectionStatus(false);
+        // ledIndicator.setConnectionStatus(false);
         break;
 
     default:
