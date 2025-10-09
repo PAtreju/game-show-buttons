@@ -13,7 +13,9 @@
 #define UDP_LISTEN_PORT 8889
 
 // Hardware Configuration
-#define LED_PIN 8 // Built-in LED pin
+#define LED_PIN 8    // GPIO8 for status LED
+#define RGB_PIN 10   // GPIO10 for RGB LED
+#define BUTTON_PIN 9 // GPIO9 for button input
 
 // Timing Configuration
 #define RETRY_INTERVAL 10000              // 10 seconds
