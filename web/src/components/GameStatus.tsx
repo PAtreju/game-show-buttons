@@ -18,7 +18,7 @@ export function GameStatus() {
   const [error, setError] = useState<string | null>(null);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
 
-  const { lastMessage, sendMessage, connectionError } = useWebSocket();
+  const { lastMessage, connectionError } = useWebSocket();
 
   const fetchDevices = async () => {
     try {
@@ -65,11 +65,6 @@ export function GameStatus() {
     }
   }, [lastMessage]);
 
-  const handleReset = () => {
-    sendMessage({ type: "reset" });
-    setPressedButton(null);
-  };
-
   useEffect(() => {
     fetchDevices();
     // Refresh devices every 30 seconds (less frequent since we have WebSocket updates)
@@ -99,11 +94,6 @@ export function GameStatus() {
               />
               Refresh
             </Button>
-            {pressedButton && (
-              <Button variant="destructive" size="sm" onClick={handleReset}>
-                Reset Game
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>

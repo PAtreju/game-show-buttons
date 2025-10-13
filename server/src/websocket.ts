@@ -131,7 +131,13 @@ export function createWebSocketServer(httpServer: Server) {
 
     ws.on("error", (error) => {
       console.error("WebSocket error:", error);
+      handleClientDisconnect(ws, "error");
     });
+  });
+
+  // Handle WebSocket server errors
+  wss.on("error", (error) => {
+    console.error("WebSocket Server error:", error);
   });
 
   console.log("WebSocket server created");
