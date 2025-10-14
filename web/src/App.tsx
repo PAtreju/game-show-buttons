@@ -6,7 +6,7 @@ import { Leaderboard } from "./components/Leaderboard";
 import { WebSocketProvider } from "./hooks/useWebSocket";
 import { useTeams } from "./hooks/useTeams";
 import { Button } from "./components/ui/button";
-import { Trophy, Settings } from "lucide-react";
+import { Trophy } from "lucide-react";
 
 function App() {
   return (
@@ -35,22 +35,6 @@ function AppContent() {
                 <Button variant="default" size="lg">
                   <Trophy className="h-5 w-5 mr-2" />
                   View Leaderboard
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isLeaderboard && (
-        <div className="border-b bg-card">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Leaderboard</h1>
-              <Link to="/">
-                <Button variant="outline" size="lg">
-                  <Settings className="h-5 w-5 mr-2" />
-                  Back to Control Panel
                 </Button>
               </Link>
             </div>

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -15,7 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Zap, Maximize, Minimize } from "lucide-react";
 import { apiClient, type Team } from "@/lib/api";
 import { useWebSocket } from "@/hooks/useWebSocketHook";
 
@@ -23,6 +23,8 @@ export function Leaderboard() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [pressedDevice, setPressedDevice] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showButton, setShowButton] = useState(true);
   const { lastMessage } = useWebSocket();
 
   const fetchTeams = async () => {
@@ -59,6 +61,51 @@ export function Leaderboard() {
     }
   }, [lastMessage]);
 
+  // Fullscreen handling
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Auto-hide button after 3 seconds, show on mouse move
+  useEffect(() => {
+    const hideTimer = setTimeout(() => {
+      setShowButton(false);
+    }, 3000);
+
+    const handleMouseMove = () => {
+      setShowButton(true);
+      clearTimeout(hideTimer);
+      setTimeout(() => setShowButton(false), 3000);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      clearTimeout(hideTimer);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -68,86 +115,99 @@ export function Leaderboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-[#12192b] via-[#60279a] to-[#9150c1]">
+      {/* Fullscreen toggle button - hidden in fullscreen mode */}
+      {!isFullscreen && showButton && (
+        <div className="fixed top-4 right-4 z-50 transition-opacity duration-300">
+          <Button
+            onClick={toggleFullscreen}
+            size="lg"
+            variant="default"
+            className="shadow-lg"
+          >
+            <Maximize className="h-5 w-5 mr-2" />
+            Enter Fullscreen
+          </Button>
         </div>
+      )}
 
+      {/* Exit fullscreen button - only visible in fullscreen mode */}
+      {isFullscreen && showButton && (
+        <div className="fixed top-4 right-4 z-50 transition-opacity duration-300">
+          <Button
+            onClick={toggleFullscreen}
+            size="lg"
+            variant="outline"
+            className="shadow-lg bg-background/80 backdrop-blur-sm"
+          >
+            <Minimize className="h-5 w-5 mr-2" />
+            Exit Fullscreen
+          </Button>
+        </div>
+      )}
+
+      <div className="container mx-auto px-4 min-h-screen flex items-center justify-center">
         {teams.length === 0 ? (
           <Card>
-            <CardContent className="py-8">
+            <CardContent className="py-4">
               <p className="text-center text-muted-foreground">
                 No teams created yet.
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="flex min-w-full gap-6">
-            {teams.map((team, index) => (
-              <Card key={team.id} className="relative overflow-hidden w-full">
-                {index === 0 && (
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600" />
-                )}
-                {index === 1 && (
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500" />
-                )}
-                {index === 2 && (
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600" />
-                )}
-                <CardHeader>
+          <div className="flex justify-center items-center gap-6 w-full">
+            {teams.map((team) => (
+              <Card key={team.id} className="relative w-full bg-black/40 backdrop-blur-md border-white/10 shadow-xl rounded-2xl overflow-hidden">
+                <CardHeader className="bg-black/20 py-2 rounded-xl">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="text-4xl font-bold text-muted-foreground">
-                        #{index + 1}
-                      </div>
+                    <div className="flex items-center gap-5">
                       <div>
-                        <CardTitle className="text-3xl">{team.name}</CardTitle>
-                        <CardDescription>
-                          {team.players?.length || 0} player{team.players?.length !== 1 ? 's' : ''}
-                        </CardDescription>
+                        <CardTitle className="text-4xl text-white mb-2 px-4">{team.name}</CardTitle>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-5xl font-bold text-primary">
+                      <div className="text-5xl font-bold text-white">
                         {team.points || 0}
                       </div>
-                      <div className="text-sm text-muted-foreground">points</div>
+                      <div className="text-lg text-white/50">points</div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="bg-black/20 py-2 rounded-xl">
                   {team.players && team.players.length > 0 ? (
-                    <Table>
+                    <Table className="rounded-xl overflow-hidden">
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Player Name</TableHead>
-                          <TableHead>Status</TableHead>
+                        <TableRow className="border-white/10">
+                          <TableHead className="text-white/70 text-xl py-3 w-3/4 rounded-tl-xl">Player Name</TableHead>
+                          <TableHead className="text-white/70 text-xl py-3 text-right w-1/4 rounded-tr-xl">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {team.players.map((player) => {
+                        {team.players.map((player, index, array) => {
                           const isPressed = !!player.deviceIp && !!pressedDevice && player.deviceIp === pressedDevice;
+                          const isLastRow = index === array.length - 1;
                           return (
                             <TableRow 
                               key={player.id}
-                              className={isPressed ? "bg-yellow-100" : ""}
+                              className={isPressed ? "bg-yellow-500/20 border-yellow-400/30 rounded-lg" : "border-white/10 rounded-lg"}
                             >
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
+                              <TableCell className={`font-medium text-white text-xl py-4 w-3/4 ${isLastRow ? 'rounded-bl-xl' : ''}`}>
+                                <div className="flex items-center gap-4">
                                   {player.name}
                                   {isPressed && (
-                                    <Badge variant="destructive" className="animate-pulse">
-                                      <Zap className="h-3 w-3 mr-1" />
+                                    <Badge variant="destructive" className="animate-pulse bg-yellow-500 text-black text-lg px-3 py-1 rounded-full">
+                                      <Zap className="h-4 w-4 mr-1" />
                                       PRESSED!
                                     </Badge>
                                   )}
                                 </div>
                               </TableCell>
-                              <TableCell>
+                              <TableCell className={`py-4 text-right w-1/4 ${isLastRow ? 'rounded-br-xl' : ''}`}>
                                 {player.deviceIp ? (
-                                  <Badge variant="default">Connected</Badge>
+                                  <Badge className="bg-green-600/70 text-white border-green-500/40 text-lg px-3 py-1 rounded-full">Ready</Badge>
                                 ) : (
-                                  <Badge variant="secondary">Not Assigned</Badge>
+                                  <Badge className="bg-white/10 text-white/70 border-white/20 text-lg px-3 py-1 rounded-full">-</Badge>
                                 )}
                               </TableCell>
                             </TableRow>
@@ -156,7 +216,7 @@ export function Leaderboard() {
                       </TableBody>
                     </Table>
                   ) : (
-                    <p className="text-center text-muted-foreground py-4">
+                    <p className="text-center text-white/50 py-6 text-2xl">
                       No players in this team
                     </p>
                   )}
