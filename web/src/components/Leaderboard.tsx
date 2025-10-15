@@ -25,6 +25,8 @@ export function Leaderboard() {
   const [pressedDevice, setPressedDevice] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showButton, setShowButton] = useState(true);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(15);
   const { lastMessage } = useWebSocket();
 
   const fetchTeams = async () => {
@@ -45,7 +47,7 @@ export function Leaderboard() {
     fetchTeams();
   }, []);
 
-  // Handle WebSocket messages for button press
+  // Handle WebSocket messages for button press and timer
   useEffect(() => {
     if (lastMessage) {
       switch (lastMessage.type) {
@@ -56,6 +58,17 @@ export function Leaderboard() {
         case "reset":
           setPressedDevice(null);
           fetchTeams(); // Refresh to show updated points
+          break;
+        case "timerStart":
+          setTimerActive(true);
+          setTimeRemaining(lastMessage.timeRemaining || 15);
+          break;
+        case "timerTick":
+          setTimeRemaining(lastMessage.timeRemaining || 0);
+          break;
+        case "timerEnd":
+          setTimerActive(false);
+          setTimeRemaining(0);
           break;
       }
     }
@@ -143,6 +156,17 @@ export function Leaderboard() {
             <Minimize className="h-5 w-5 mr-2" />
             Exit Fullscreen
           </Button>
+        </div>
+      )}
+
+      {/* Timer Countdown Overlay */}
+      {timerActive && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="text-9xl font-bold text-white mb-4 animate-pulse">
+              {timeRemaining}
+            </div>
+          </div>
         </div>
       )}
 

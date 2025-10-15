@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Timer } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useWebSocket } from "@/hooks/useWebSocketHook";
 
@@ -17,8 +17,9 @@ export function GameStatus() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  const { lastMessage, connectionError } = useWebSocket();
+  const { lastMessage, connectionError, sendMessage } = useWebSocket();
 
   const fetchDevices = async () => {
     try {
@@ -41,6 +42,11 @@ export function GameStatus() {
     setDevices((prev) => prev.filter((d) => d !== ip));
   };
 
+  const startTimer = () => {
+    sendMessage({ type: "startTimer", duration: 15 });
+    setIsTimerRunning(true);
+  };
+
   // Handle WebSocket messages
   useEffect(() => {
     if (lastMessage) {
@@ -60,6 +66,12 @@ export function GameStatus() {
           break;
         case "reset":
           setPressedButton(null);
+          break;
+        case "timerStart":
+          setIsTimerRunning(true);
+          break;
+        case "timerEnd":
+          setIsTimerRunning(false);
           break;
       }
     }
@@ -93,6 +105,15 @@ export function GameStatus() {
                 className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
               />
               Refresh
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={startTimer}
+              disabled={isTimerRunning}
+            >
+              <Timer className="h-4 w-4 mr-2" />
+              Start Timer (15s)
             </Button>
           </div>
         </div>
